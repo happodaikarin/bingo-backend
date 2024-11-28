@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sala de Espera</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+</head>
+<body>
+    <div>
+        <input type="text" id="playerName" placeholder="Tu nombre" />
+        <button onclick="joinWaitingRoom()">Unirse a la sala</button>
+    </div>
+
+    <div id="waiting-room">
+        <h3>Jugadores en la sala:</h3>
+        <ul id="player-list"></ul>
+    </div>
+
+    <script>
+        var stompClient = null;
+
+        function connect() {
+            var socket = new SockJS('/gs-guide-websocket');
+            stompClient = Stomp.over(socket);
+            stompClient.connect({}, function (frame) {
+                console.log('Connected: ' + frame);
+
+                stompClient.subscribe('/topic/waiting-room', function (message) {
+                    updateWaitingRoom(JSON.parse(message.body));
+                });
+            });
+        }
+
+        function joinWaitingRoom() {
+            var playerName = document.getElementById('playerName').value;
+            stompClient.send("/app/join-room", {}, playerName);
+        }
+
+        function updateWaitingRoom(players) {
+            var playerList = document.getElementById('player-list');
+            playerList.innerHTML = "";
+            players.forEach(function (player) {
+                var li = document.createElement('li');
+                li.textContent = player.name;
+                playerList.appendChild(li);
+            });
+        }
+
+        connect();
+    </script>
+</body>
+</html>
